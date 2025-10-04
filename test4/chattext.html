@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>多功能聊天系統</title>
+    <style>
+        body { 
+            font-family: "微軟正黑體", sans-serif; 
+            max-width: 1000px; 
+            margin: 40px auto; 
+            display: flex;
+            gap: 20px;
+        }
+        h1 { text-align: center; margin-bottom: 20px; }
+        #chat-container { flex: 1; display: flex; flex-direction: column; }
+        #chat-box { 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            height: 500px; 
+            overflow-y: auto; 
+            background-color: #f9f9f9; 
+            border-radius: 10px;
+        }
+        .message { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border-radius: 10px; 
+            max-width: 70%; 
+            word-wrap: break-word;
+        }
+        .user { background-color: #d1e7ff; margin-left: auto; text-align: right; }
+        .bot { background-color: #e2f0d9; margin-right: auto; text-align: left; }
+        #input-area { margin-top: 10px; display: flex; }
+        input, select, textarea { flex: 1; padding: 10px; font-size: 16px; margin-right: 5px; border-radius: 6px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; font-size: 16px; cursor: pointer; border-radius: 6px; }
+        #sidebar { 
+            width: 200px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            margin-top: 60px;
+        }
+        #sidebar button { background: #f0f0f0; border: 1px solid #ccc; }
+        #sidebar button.active { background: #007bff; color: white; border-color: #007bff; }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <h1 id="system-title">金融問答聊天系統</h1>
+        <div id="chat-box"></div>
+        <div id="input-area">
+            <textarea id="question" placeholder="請輸入你的問題..." rows="2"></textarea>
+            <button onclick="askQuestion()">送出</button>
+            <button onclick="clearChat()">清除對話</button>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <button class="active" onclick="switchSystem('finance')">金融問答</button>
+        <button onclick="switchSystem('news')">新聞摘要</button>
+        <button onclick="switchSystem('asset')">資產配置</button>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById("chat-box");
+        const systemTitle = document.getElementById("system-title");
+        const inputArea = document.getElementById("input-area");
+        const messages = [];
+        let currentSystem = "finance"; // 預設是金融問答
+
+        function createDefaultInput() {
+            inputArea.innerHTML = `
+                <textarea id="question" placeholder="請輸入你的問題..." rows="2"></textarea>
+                <button onclick="askQuestion()">送出</button>
+                <button onclick="clearChat()">清除對話</button>
+            `;
+            const questionInput = document.getElementById("question");
+            questionInput.addEventListener("keydown", e => {
+                if(e.key === "Enter" && !e.shiftKey){
+                    e.preventDefault();
+                    askQuestion();
+                }
+            });
+        }
+
+        function createAssetInput() {
+            inputArea.innerHTML = `
+                <input type="number" id="age" placeholder="年齡 (可留空)">
+                <select id="risk">
+                    <option value="">風險偏好 (可留空)</option>
+                    <option value="高">高</option>
+                    <option value="中">中</option>
+                    <option value="低">低</option>
+                </select>
+                <input type="number" id="amount" placeholder="投資金額 (必填)">
+                <button onclick="askQuestion()">送出</button>
+                <button onclick="clearChat()">清除對話</button>
+            `;
+            const amountInput = document.getElementById("amount");
+            amountInput.addEventListener("keydown", e => {
+                if(e.key === "Enter"){
+                    e.preventDefault();
+                    askQuestion();
+                }
+            });
+        }
+
+        function appendMessage(role, text) {
+            const div = document.createElement("div");
+            div.className = "message " + role;
+            div.innerText = text;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function clearChat() {
+            chatBox.innerHTML = "";
+            messages.length = 0;
+        }
+
+        function switchSystem(system) {
+            currentSystem = system;
+            document.querySelectorAll("#sidebar button").forEach(btn => btn.classList.remove("active"));
+            if(system === "finance") {
+                systemTitle.innerText = "金融問答聊天系統";
+                document.querySelector("#sidebar button:nth-child(1)").classList.add("active");
+                createDefaultInput();
+            } else if(system === "news") {
+                systemTitle.innerText = "新聞摘要系統";
+                document.querySelector("#sidebar button:nth-child(2)").classList.add("active");
+                createDefaultInput();
+            } else if(system === "asset") {
+                systemTitle.innerText = "資產配置系統";
+                document.querySelector("#sidebar button:nth-child(3)").classList.add("active");
+                createAssetInput();
+            }
+            clearChat();
+        }
+
+        async function askQuestion() {
+            let payload = {};
+            let endpoint = "";
+
+            if(currentSystem === "finance" || currentSystem === "news") {
+                const questionInput = document.getElementById("question");
+                const question = questionInput.value.trim();
+                if(!question) return;
+                payload = { question };
+                appendMessage("user", question);
+                endpoint = currentSystem === "finance" ? "http://127.0.0.1:5000/ask" : "http://127.0.0.1:5000/news";
+                questionInput.value = "";
+            } else if(currentSystem === "asset") {
+                const age = document.getElementById("age").value || null;
+                const risk = document.getElementById("risk").value || null;
+                const amount = document.getElementById("amount").value;
+                if(!amount){
+                    alert("請輸入投資金額");
+                    return;
+                }
+                payload = { age, risk_level: risk, amount };
+                appendMessage("user", `年齡:${age || "未填"}, 風險:${risk || "未填"}, 金額:${amount}`);
+                endpoint = "http://127.0.0.1:5000/asset";
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                appendMessage("bot", data.answer);
+                messages.push({role:"bot", text: data.answer});
+            } catch(err) {
+                appendMessage("bot", "伺服器出錯，請稍後再試");
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
