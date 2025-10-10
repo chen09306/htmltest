@@ -11,14 +11,13 @@ CORS(app)  # 允許前端跨域請求
 MODEL_NAME = "Qwen/Qwen2-1.5B-Instruct"  
 
 print("正在載入金融模型，請稍候...")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
-    device_map="auto",
-    torch_dtype=torch.float16,
+    device_map={"": "cpu"},  # 強制 CPU
+    torch_dtype=torch.float32,
     trust_remote_code=True
 )
-generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 def financial_qa(question):
     """金融問答系統"""
@@ -147,4 +146,5 @@ def asset_allocation():
 if __name__ == "__main__":
     # 只有在本機開發時才會用到
     app.run(host="0.0.0.0", port=5000, debug=True)
+
 
