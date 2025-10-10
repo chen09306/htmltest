@@ -39,7 +39,7 @@ def ask():
 
 # ====================== 新聞摘要 ======================
 # Stanza 初始化（只要第一次下載模型即可）
-# stanza.download('zh')  
+stanza.download('zh')  
 nlp = stanza.Pipeline('zh')
 
 @app.route("/news", methods=["POST"])
@@ -147,3 +147,4 @@ def asset_allocation():
 if __name__ == "__main__":
     # 只有在本機開發時才會用到
     app.run(host="0.0.0.0", port=5000, debug=True)
+
