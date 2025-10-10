@@ -3,6 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 import torch
 import stanza
 from flask_cors import CORS  # 處理跨域
+import os
 
 app = Flask(__name__)
 CORS(app)  # 允許前端跨域請求
@@ -144,7 +145,9 @@ def asset_allocation():
 
 # ====================== 主程式 ======================
 if __name__ == "__main__":
-    # 只有在本機開發時才會用到
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # 本機開發可用 PORT 預設值 8000
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=True)
+
 
 
