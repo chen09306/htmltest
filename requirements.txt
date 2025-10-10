@@ -1,7 +1,8 @@
-accelerate>=1.28.0
 torch>=2.1.0
 transformers>=4.35.0
-numpy>=2.0
-stanza
-flask
-flask-cors
+accelerate>=1.28.0
+stanza>=1.5.0
+flask>=2.3.5
+flask-cors>=3.1.13
+numpy>=1.26.0
+requests>=2.32.3
